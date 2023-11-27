@@ -1,0 +1,375 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Sheet Show
+  license:
+    name: MIT
+servers:
+  - url: https://sheet-manipulator.yawnxyz.workers.dev
+paths:
+  /time:
+    get:
+      summary: Get the current time in UTC or a specified timezone
+      operationId: getTime
+      parameters:
+        - in: query
+          name: location
+          schema:
+            type: string
+          description: Timezone (e.g. Australia/Sydney) of the location to get the current time for
+          required: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  time:
+                    type: string
+                    format: date-time
+  /configs:
+    get:
+      summary: Get all Type configurations so you know what Params to send when getting/adding content
+      operationId: getConfigs
+      parameters:
+        - in: query
+          name: sheetUrl
+          schema:
+            type: string
+          description: Custom GoogleSheet URL that replaces default
+          required: false
+        - in: query
+          name: location
+          schema:
+            type: string
+          description: Timezone (e.g. Australia/Sydney) of the location to get the current time for
+          required: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  configs:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        _id:
+                          type: integer
+                        Date Modified:
+                          type: string
+                          format: date-time
+                        Type:
+                          type: string
+                        Name:
+                          type: string
+                        Description:
+                          type: string
+                        Schema:
+                          oneOf:
+                            - type: object
+                              additionalProperties:
+                                type: object
+                                properties:
+                                  description:
+                                    type: string
+                                  required:
+                                    type: boolean
+                            - type: array
+                              items:
+                                type: string
+                  time:
+                    type: string
+                    format: date-time
+  /logs:
+    get:
+      summary: Get logs
+      operationId: getLogs
+      parameters:
+        - in: query
+          name: sheetUrl
+          schema:
+            type: string
+          description: Custom GoogleSheet URL that replaces default
+          required: false
+        - in: query
+          name: location
+          schema:
+            type: string
+          description: Timezone (e.g. Australia/Sydney) of the location to get the current time for
+          required: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  time:
+                    type: string
+                    format: date-time
+  /addlog:
+    post:
+      summary: Add a row to the logs. Use the appropriate Config Schema to add more Query Parameters in addition to this list. Treat them all as strings.
+      operationId: addLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                settings:
+                  type: object
+                  properties:
+                    sheetUrl:
+                      type: string
+                      description: If provided, an alternate GoogleSheet URL that replaces default
+                    Type:
+                      type: string
+                      description: The name of the Config you chose
+                    location:
+                      type: string
+                      description: Timezone (e.g. Australia/Sydney) of the location to get the current time for
+                columns:
+                  type: object
+                  required: ['User', 'Assistant']
+                  properties:
+                    Data:
+                      type: object
+                      description: JSON object based on config data requirements. Treat this as JSON and not as a string.
+                      items:
+                        type: array
+                        description: If multiple Data items are asked to be added, e.g. a list of books or grocery items, add each item to the items array, according to schema, as JSON
+                        items:
+                          type: object
+                          additionalProperties: true
+                    User:
+                      type: string
+                      description: User Prompt, verbatim
+                    Assistant:
+                      type: string
+                      description: Assistant answer, verbatim
+                    Tags:
+                      type: string
+                      description: Comma-separated list of tags
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+  /all:
+    get:
+      summary: Fetch all data
+      operationId: fetchAll
+      parameters:
+        - in: query
+          name: sheetUrl
+          schema:
+            type: string
+          description: Custom GoogleSheet URL that replaces default
+          required: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  Logs:
+                    type: object
+                  Configs:
+                    type: object
+  /columns:
+    get:
+      summary: Get specific columns of data from a sheet; useful for keywords, for searching/referencing, getting embeddings, etc.
+      operationId: getColumns
+      parameters:
+        - in: query
+          name: names
+          schema:
+            type: string
+          description: Comma-separated list of column names to fetch
+          required: false
+        - in: query
+          name: sheet
+          schema:
+            type: string
+          description: Name of the sheet to fetch from
+          required: false
+        - in: query
+          name: sheetUrl
+          schema:
+            type: string
+          description: Custom GoogleSheet URL that replaces default
+          required: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: integer
+                  additionalProperties:
+                    type: string
+  /sheet:
+    get:
+      summary: Fetches data from a specified sheet.
+      operationId: getSheet
+      parameters:
+        - name: sheet
+          in: query
+          description: The name of the sheet to fetch data from. Defaults to "Logs" if not provided.
+          required: true
+          schema:
+            type: string
+        - name: sheetUrl
+          in: query
+          description: The URL of the Google Sheet to fetch data from.
+          required: false
+          schema:
+            type: string
+        - name: location
+          in: query
+          description: Timezone (e.g. Australia/Sydney) of the location to get the current time for.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: The data fetched from the sheet.
+                  time:
+                    type: string
+                    format: date-time
+                    description: The current time at the specified location.
+        '500':
+          description: Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /find:
+    get:
+      summary: Find specific rows from a sheet based on column value
+      operationId: findRows
+      parameters:
+        - in: query
+          name: column
+          schema:
+            type: string
+          description: Name of the column to match; finds across all columns if not given
+          required: false
+        - in: query
+          name: value
+          schema:
+            type: string
+          description: Value to match in the specified column
+          required: true
+        - in: query
+          name: sheet
+          schema:
+            type: string
+          description: Name of the sheet to fetch from; if user doesn't ask for this, don't set it
+          required: false
+        - in: query
+          name: match
+          schema:
+            type: string
+            enum: ['exact', 'contains', 'regex']
+          description: Match type for the value in the specified column
+          required: false
+        - in: query
+          name: sheetUrl
+          schema:
+            type: string
+          description: Custom GoogleSheet URL that replaces default; if user doesn't ask for this, don't set it
+          required: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties:
+                    type: string
+    post:
+      summary: Find specific rows from a sheet based on column value
+      operationId: findRows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                column:
+                  type: string
+                  description: Name of the column to match
+                value:
+                  type: string
+                  description: Value to match in the specified column
+                sheet:
+                  type: string
+                  description: Name of the sheet to fetch from
+                match:
+                  type: string
+                  enum: ['exact', 'contains', 'regex']
+                  description: Match type for the value in the specified column
+                sheetUrl:
+                  type: string
+                  description: Custom GoogleSheet URL that replaces default
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties:
+                    type: string
