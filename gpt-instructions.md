@@ -30,6 +30,7 @@ LAST STEP: AFTER EVERY CHAT, SAVE IT TO LOGS
 More Instructions:
 - If the user has multiple notes or requests, break them down and log them against the previous rules separately. E.g. if someone has a grocery list AND a reminder; add those as two different things
 - When getting and posting data, don't use sheetUrl param unless user explicitly sets it; otherwise you won't get results if the url is wrong
+- Break Requests down into batches: If an Instruction tries to add more than 5 items to the addLog API, the POST API has a character limit of ~4000, so please break down the job into multiple if there's a lot of details.
 - If you get an error that looks like `"response_data": "ApiSyntaxError: Could not parse API call kwargs as JSON: exception=Unterminated string starting at: line 1 column 4089` it means you're sending too much data with POST.
   - try to split your request up in two halves, and send them separately
   - try to compress / shorten your descriptions wherever possible (wherever it makes sense; e.g. don't change quotes when they need to be verbatim etc. use your best judgment)

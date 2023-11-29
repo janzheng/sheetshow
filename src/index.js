@@ -23,8 +23,9 @@ const app = new Hono()
 
 let SHEET_URL
 // const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwcjDaOXTzTndkTW3u9UFKtk3rrctxGtcrvCUA5h7nLWCbeJok049ruZx6Qbs6VIKQH/exec'; // open-phage
-SHEET_URL = 'https://script.google.com/macros/s/AKfycbz4MkVigBY6nRgon7GHKEbTARiSm6KxPjG1diNwUVd-I8KY3yAmdLFHu9CVmVx-gO9u/exec'; // sheet-manipulator
+// SHEET_URL = 'https://script.google.com/macros/s/AKfycbz4MkVigBY6nRgon7GHKEbTARiSm6KxPjG1diNwUVd-I8KY3yAmdLFHu9CVmVx-gO9u/exec'; // sheet-manipulator
 // SHEET_URL = 'https://script.google.com/macros/s/AKfycbxU_qqJcYVhAp5dHK8ToRNXgsznmqIW85X6hqqck2NKuU2M0w6_ShOHBQhxBK4g9t62/exec'; // Dos!
+SHEET_URL = 'https://script.google.com/macros/s/AKfycbzj9Y1H6Ku-Lkgi6T0zKxGH6Jl7AOK7N-1y2U8tqqBbzNH3p9F_usTpUzwL2nfywOfC/exec'; // v2 w/ columns
 
 // These sheets are default; others sheets may be loaded thru Configs
 const sheets = ["Logs", "Configs"]
@@ -606,6 +607,120 @@ app.post('/update', async (c) => {
     return c.json({ error: `[update] ${e.message}` }, 500);
   }
 });
+
+
+
+
+
+
+
+export const addCol = async ({ columnName, sheet = 'Logs', sheetUrl = SHEET_URL }) => {
+
+  let data;
+  await semaAdd.acquire();
+  try {
+    const response = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        "method": "ADD_COLUMN",
+        "sheet": sheet,
+        columnName,
+      })
+    })
+    data = await response.json()
+  } finally {
+    semaAdd.release();
+  }
+  return data
+}
+export const editCol = async ({ oldColumnName, newColumnName, sheet = 'Logs', sheetUrl = SHEET_URL }) => {
+
+  let data;
+  await semaAdd.acquire();
+  try {
+    const response = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        "method": "EDIT_COLUMN",
+        "sheet": sheet,
+        oldColumnName,
+        newColumnName
+      })
+    })
+    data = await response.json()
+  } finally {
+    semaAdd.release();
+  }
+  return data
+}
+
+export const removeCol = async ({ columnName, sheet = 'Logs', sheetUrl = SHEET_URL }) => {
+
+  let data;
+  await semaAdd.acquire();
+  try {
+    const response = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        "method": "REMOVE_COLUMN",
+        "sheet": sheet,
+        columnName,
+      })
+    })
+    data = await response.json()
+  } finally {
+    semaAdd.release();
+  }
+  return data
+}
+
+// this is for testing; don't call it directly via LLMs or add it to the yaml
+// instead, update w/ the addlog and configs
+app.post('/col/add', async (c) => {
+  try {
+    const data = await c.req.json();
+    let result = await addCol(data)
+
+    return c.json(result);
+  } catch (e) {
+    console.log('[col/add] error:', e)
+    return c.json({ error: `[col/add] ${e.message}` }, 500);
+  }
+});
+app.post('/col/edit', async (c) => {
+  try {
+    const data = await c.req.json();
+    let result = await editCol(data)
+
+    return c.json(result);
+  } catch (e) {
+    console.log('[col/edit] error:', e)
+    return c.json({ error: `[col/edit] ${e.message}` }, 500);
+  }
+});
+app.post('/col/remove', async (c) => {
+  try {
+    const data = await c.req.json();
+    let result = await removeCol(data)
+
+    return c.json(result);
+  } catch (e) {
+    console.log('[col/remove] error:', e)
+    return c.json({ error: `[col/remove] ${e.message}` }, 500);
+  }
+});
+
+
+
 
 
 
